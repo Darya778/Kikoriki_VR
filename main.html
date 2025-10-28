@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>Смешарики VR — с прыжками и исправленным WASD + лес</title>
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  </head>
+  <body>
+    <a-scene tabindex="0"> <!-- tabindex чтобы сцена могла получать фокус в некоторых браузерах -->
+      <!-- Ассеты: все модели и текстуры предзагружаются -->
+      <a-assets>
+        <img id="skyTexture" src="assets/sky.jpg">
+        <img id="land" src="assets/land.jpg">
+
+        <!-- Дома -->
+        <a-asset-item id="pin_house" src="3dmodels/pin_house.glb"></a-asset-item>
+        <a-asset-item id="krosh_house" src="3dmodels/krosh_house.glb"></a-asset-item>
+        <a-asset-item id="kopatich_house" src="3dmodels/kopatich_house.glb"></a-asset-item>
+        <a-asset-item id="ezhik_house" src="3dmodels/ezhik_house.glb"></a-asset-item>
+        <a-asset-item id="tree" src="glb/tree.fbx"></a-asset-item>
+        <a-asset-item id="nyusha_house" src="3dmodels/nyusha_house.glb"></a-asset-item>
+        <a-asset-item id="karich_house" src="3dmodels/karich_house.glb"></a-asset-item>
+        <a-asset-item id="sovynya_house" src="3dmodels/sovunya_house.glb"></a-asset-item>
+        <a-asset-item id="losyash_house" src="3dmodels/losyash_house.glb"></a-asset-item>
+        <a-asset-item id="barash_house" src="3dmodels/barash_house.glb"></a-asset-item>
+        
+        <!--Предметы-->
+        <a-asset-item id="rock" src="glb/low_poly_rocks.glb"></a-asset-item>
+        <a-asset-item id="giant_tree" src="glb/giant_low_poly_tree.glb"></a-asset-item>
+        <a-asset-item id="forest_in_mountain" src="glb/low_poly_forest_1.glb"></a-asset-item>
+        <a-asset-item id="mountain" src="glb/low_poly_mountain_free.glb"></a-asset-item>
+        <a-asset-item id="spruce" src="glb/spruce_tree_lowpoly.glb"></a-asset-item>
+        <a-asset-item id="pine" src="glb/trees pack.glb"></a-asset-item>
+        <a-asset-item id="fence" src="glb/low_poly_wooden_fence.glb"></a-asset-item>
+        <a-asset-item id="desert" src="glb/low_poly_forest_1.glb"></a-asset-item>
+        <a-asset-item id="bridge" src="glb/simple_bridge.glb"></a-asset-item>
+        <a-asset-item id="fountain" src="glb/grassy_river.glb"></a-asset-item>
+        <a-asset-item id="bereza" src="glb/bereza.glb"></a-asset-item>
+        <a-asset-item id="ice" src="glb/stylized_ice_plane.glb"></a-asset-item>
+        
+        <!-- Смешарики -->
+        <a-asset-item id="barash"   src="3dmodels/barash.glb"></a-asset-item>
+        <a-asset-item id="ezhik"    src="3dmodels/ezhik.glb"></a-asset-item>
+        <a-asset-item id="karich"   src="3dmodels/karich.glb"></a-asset-item>
+        <a-asset-item id="kopatich" src="3dmodels/kopatich.glb"></a-asset-item>
+        <a-asset-item id="krosh"    src="3dmodels/krosh.glb"></a-asset-item>
+        <a-asset-item id="losyash"  src="3dmodels/losyash.glb"></a-asset-item>
+        <a-asset-item id="nyusha"   src="3dmodels/nyusha.glb"></a-asset-item>
+        <a-asset-item id="pin"      src="3dmodels/pin.glb"></a-asset-item>
+        <a-asset-item id="sovunya"  src="3dmodels/sovunya.glb"></a-asset-item>
+      </a-assets>
+
+      <!-- Небо и земля -->
+      <a-sky src="#skyTexture"></a-sky>
+      <a-plane rotation="-90 0 0" width="200" height="200" src="#land" shadow="receive: true"></a-plane>
+
+      <!-- Игрок / Rig: камера с WASD (wasd-controls на камере) -->
+      <a-entity id="rig" position="0 1.6 5"> 
+        <a-entity camera wasd-controls="acceleration: 50" look-controls></a-entity> 
+      </a-entity>
+
+      <!-- Дома -->
+      <a-entity gltf-model="#pin_house" position="70 5.81 40" scale="3.5 3.5 3.5" rotation="0 -60 0"></a-entity>
+      <a-entity gltf-model="#krosh_house" position="10 0.01 5" scale="1.5 1.5 1.5" rotation="0 -45 0"></a-entity>
+      <a-entity gltf-model="#kopatich_house" position="-25 0.01 75" scale="3.5 3.5 3.5"></a-entity>
+      <a-entity gltf-model="#ezhik_house" position="30 0.01 22" scale="3.5 3.5 3.5"></a-entity>
+      <a-entity gltf-model="#nyusha_house" position="-60 3.1 -8" scale="3.5 3.5 3.5" ></a-entity>
+      <a-entity gltf-model="#karich_house" position="-34 3.6 40" scale="3.5 3.5 3.5" ></a-entity>
+      <a-entity gltf-model="#sovynya_house" position="40 5.1 -60" scale="2 2 2"></a-entity>
+      <a-entity gltf-model="#losyash_house" position="-78 3.1 25" scale="3.5 3.5 3.5"></a-entity>
+      <a-entity gltf-model="#barash_house" position="-35 3.1 -50" scale="3.5 3.5 3.5"></a-entity>
+      <!--Камни бараша -->
+      <a-entity gltf-model="#rock" position="-32 0.9 -50" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-32 1.1 -49" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-32 0.5 -52" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-33 0.5 -53.5" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-34 0.8 -53.5" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-35 1.2 -53.5" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-36 1.3 -53.5" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-35 1.5 -53.8" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-36 1.8 -53.8" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-37 1.5 -53" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-38 1.6 -53" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-38 1.8 -53.8" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-38 1.4 -53" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-38 1.8 -53" scale="3 3 3"></a-entity>
+
+      <!-- Одиночное дерево -->
+      <a-entity gltf-model="#giant_tree" position="-22 0.1 -43" ></a-entity>
+      <a-entity gltf-model="#pine" position="-47 -4 30"  scale="4 4 4"></a-entity>
+      <!--Горы-->
+      <a-entity gltf-model="#mountain" position="50 0.1 -80" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="50 0.1 -70" scale="3 3 3 "></a-entity>
+       <a-entity gltf-model="#mountain" position="50 0.1 -90" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="50 0.1 -95" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="52 0.1 -80" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="55 0.1 -70" scale="3 3 3 "></a-entity>
+       <a-entity gltf-model="#mountain" position="65 0.1 -90" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="68 0.1 -95" scale="3 3 3 "></a-entity>
+
+      <a-entity gltf-model="#mountain" position="80 0.1 -80" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="85 0.1 -70" scale="3 3 3 "></a-entity>
+       <a-entity gltf-model="#mountain" position="83 0.1 -90" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="100 0.1 -95" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="74 0.1 -80" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="65 0.1 -70" scale="3 3 3 "></a-entity>
+       <a-entity gltf-model="#mountain" position="75 0.1 -90" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="88 0.1 -95" scale="3 3 3 "></a-entity>
+
+      <a-entity gltf-model="#mountain" position="45 0.1 -85" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="40 0.1 -88" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="42 0.1 -90" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="38 0.1 -97" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="35 0.1 -89" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="35 0.1 -99" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="45 0.1 -93" scale="3 3 3 "></a-entity>
+
+      <a-entity gltf-model="#spruce" position="28 0.1 -91" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#desert" position="-80 0.1 -80" rotation=" 0 -180 0"></a-entity>
+      <a-entity gltf-model="#desert" position="-55 0.1 -80" rotation=" 0 -360 0"></a-entity>
+      <a-entity gltf-model="#bridge" position=" 18 0.1 -50" rotation=" 0 -90 0"></a-entity>
+      <a-entity gltf-model="#bridge" position=" 65 0.1 5" rotation=" 0 -105 0"></a-entity>
+      <a-entity gltf-model="#bridge" position=" 61 0.1 -40" scale= "0.8 0.8 0.8" rotation="0 55 0 "></a-entity>
+      <a-entity gltf-model="#fountain" position="-78 1.1 100" scale= "15 15 15" rotation="0 55 0 "></a-entity>
+      <a-entity gltf-model="#ice" position="70 -1.4 70" scale= "0.03 0.03 0.03"></a-entity>
+      <a-entity gltf-model="#ice" position="55 -1.4 85" scale= "0.03 0.03 0.03"></a-entity>
+      <a-entity gltf-model="#ice" position="40 -1.4 70" scale= "0.03 0.03 0.03"></a-entity>
+      <a-entity gltf-model="#ice" position="25 -1.4 85" scale= "0.03 0.03 0.03"></a-entity>
+      <a-entity gltf-model="#ice" position="40 -1.4 55" scale= "0.03 0.03 0.03"></a-entity>
+      <a-entity gltf-model="#ice" position="45 -1.4 40" scale= "0.03 0.03 0.03"></a-entity>
+      <!--<a-plane id="greenPlane"
+         width="200"
+         height="200"
+         color="#3F9B0B"
+         rotation="-90 0 0"
+         position="0 0 0"
+         material="side: double; metalness: 0.0; roughness: 1.0">
+      </a-plane>-->
+      <!-- Компонент прыжка и регистрация в A-Frame -->
+      <script>
+        AFRAME.registerComponent('jumper', {
+          schema: {
+            height: {type: 'number', default: 0.25},   // высота прыжка в метрах
+            duration: {type: 'number', default: 600},  // длительность полного прыжка (мс)
+            interval: {type: 'number', default: 1800}, // пауза между прыжками (мс)
+            offset: {type: 'number', default: 0}       // дополнительная случайная задержка (мс)
+          },
+          init: function () {
+            this.originalY = this.el.object3D.position.y || 0;
+            this.isJumping = false;
+            this.nextJump = performance.now() + (Math.random()*600 + this.data.offset);
+            this.jumpStart = 0;
+          },
+          tick: function (t, dt) {
+            const now = performance.now();
+            if (!this.isJumping && now >= this.nextJump) {
+              this.isJumping = true;
+              this.jumpStart = now;
+            }
+            if (this.isJumping) {
+              const elapsed = now - this.jumpStart;
+              const dur = this.data.duration;
+              if (elapsed <= dur) {
+                const progress = elapsed / dur; // 0..1
+                // плавный подъём/опускание: sin(pi * progress)
+                const y = this.originalY + Math.sin(Math.PI * progress) * this.data.height;
+                this.el.object3D.position.y = y;
+              } else {
+                // конец прыжка
+                this.isJumping = false;
+                this.el.object3D.position.y = this.originalY;
+                this.nextJump = now + this.data.interval + Math.random()*400;
+              }
+            }
+          }
+        });
+      </script>
+
+      <!-- Персонажи: используют preloaded ассеты и компонент jumper -->
+      <a-entity gltf-model="#barash"   position="-35 0.1 -45"    scale="4 4 4" jumper="height:0.22; duration:550; interval:2000"></a-entity>
+      <a-entity gltf-model="#ezhik"    position="30 0.1 27"    scale="4 4 4" rotation="0 -40 0" jumper="height:0.18; duration:500; interval:1800"></a-entity>
+      <a-entity gltf-model="#karich"   position="-34 0.21 45"    scale="4 4 4" rotation="0 0 0" jumper="height:0.2; duration:600; interval:2200"></a-entity>
+      <a-entity gltf-model="#kopatich" position="-25 0.1 80"     scale="4 4 4" rotation="0 0 0" jumper="height:0.15; duration:500; interval:1900"></a-entity>
+      <a-entity gltf-model="#krosh"    position="8 0.01 10" scale="4 4 4" rotation="0 -60 0" jumper="height:0.25; duration:480; interval:1700"></a-entity>
+      <a-entity gltf-model="#losyash"  position="-78 0.1 30" scale="4 4 4" rotation="0 0 0" jumper="height:0.18; duration:540; interval:2000"></a-entity>
+      <a-entity gltf-model="#nyusha"   position="-60 0.01 -3"     scale="4 4 4" rotation="0 0 0" jumper="height:0.2; duration:520; interval:2100"></a-entity>
+      <a-entity gltf-model="#pin"      position="62 0.1 38"    scale="4 4 4" rotation="0 120 0" jumper="height:0.22; duration:500; interval:2000"></a-entity>
+      <a-entity gltf-model="#sovunya"  position="42 1.3 -56"    scale="4 4 4" rotation="0 0 0" jumper="height:0.16; duration:560; interval:2300"></a-entity>
+
+      <!-- TREE FOREST COMPONENT (adds 13 trees around center 10,0.01,5) -->
+      <script>
+        AFRAME.registerComponent('tree-forest', {
+          schema: {
+            model:      { type: 'string', default: '#giant_tree' }, // селектор модели
+            count:      { type: 'int',    default: 13 },
+            center:     { type: 'vec3',   default: { x: 10, y: 0.01, z: 5 } },
+            minRadius:  { type: 'number', default: 5 },
+            maxRadius:  { type: 'number', default: 10 },
+            minScale:   { type: 'number', default: 1 },
+            maxScale:   { type: 'number', default: 2 },
+            maxBury:    { type: 'number', default: 0.6 }, // максимум отрицательной Y (в метрах)
+            avoidRadius:{ type: 'number', default: 0.8 }  // минимальный отступ между деревьями
+          },
+          init: function () {
+            const cfg = this.data;
+            const placed = [];
+
+            function rnd(min, max) { return min + Math.random() * (max - min); }
+            function dist(a, b) {
+              const dx = a.x - b.x, dz = a.z - b.z;
+              return Math.hypot(dx, dz);
+            }
+
+            for (let i = 0; i < cfg.count; i++) {
+              let attempts = 0;
+              let pos;
+              do {
+                const angle = Math.random() * Math.PI * 2;
+                const radius = rnd(cfg.minRadius, cfg.maxRadius);
+                const x = cfg.center.x + Math.cos(angle) * radius;
+                const z = cfg.center.z + Math.sin(angle) * radius;
+                const y = cfg.center.y - Math.random() * cfg.maxBury; // уводим y вниз до -maxBury
+                pos = { x, y, z };
+                attempts++;
+              } while (attempts < 12 && placed.some(p => dist(p, pos) < cfg.avoidRadius));
+
+              placed.push(pos);
+
+              const ent = document.createElement('a-entity');
+              ent.setAttribute('gltf-model', cfg.model);
+              ent.setAttribute('position', `${pos.x} ${pos.y} ${pos.z}`);
+              const s = rnd(cfg.minScale, cfg.maxScale);
+              ent.setAttribute('scale', `${s} ${s} ${s}`);
+              const ry = Math.floor(Math.random() * 360);
+              ent.setAttribute('rotation', `0 ${ry} 0`);
+              this.el.sceneEl.appendChild(ent);
+            }
+          }
+        });
+      </script>
+
+      <!--Генерация Леса Крош-->
+      <a-entity tree-forest="model: #giant_tree; count: 20; center: -10 0.01 5; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.6;avoid_radius: 3"></a-entity>
+
+      <a-entity tree-forest="model: #spruce; count: 10; center: 15 0.01 -18; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.6;avoid_radius: 3"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: 15 0.01 -18; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.6;avoid_radius: 3"></a-entity>
+      
+      <!--Генерация Леса Карыч-->
+
+      <a-entity tree-forest="model: #giant_tree; count: 20; center: -15 0.1 40; minRadius: 5; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.6;avoid_radius: 5"></a-entity>
+
+      <a-entity tree-forest="model: #spruce; count: 10; center: -53 0.1 40; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.6;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -53 0.01 40; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.6;avoid_radius: 5"></a-entity>
+      
+      <!--Генерация Леса Лосяш-->
+
+      <a-entity tree-forest="model: #giant_tree; count: 2; center: -65 0.1 30; minRadius: 4; maxRadius: 4; minScale: 0,5; maxScale:0.9; maxBury: 0.6;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 3; center: -65 0.1 30; minRadius: 4; maxRadius: 4; minScale: 2.5; maxScale: 3.2; maxBury: 0.6;avoid_radius: 5"></a-entity>
+      
+      <a-entity tree-forest="model: #giant_tree; count: 3; center: -85 0.1 30; minRadius: 4; maxRadius: 4; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 2; center: -85 0.1 30; minRadius: 4; maxRadius: 4; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: -85 0.1 15; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: -85 0.1 15; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: -65 0.1 15; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: -65 0.1 15; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: -75 0.1 15; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: -75 0.1 15; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+
+      <!--Генерация для конца карты со стороны дома лосяша-->
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -85 0.1 10; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -85 0.1 10; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -75 0.1 10; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -75 0.1 10; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -85 0.1 0; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -85 0.1 0; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: -90 0.1 -10; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: -90 0.1 -10; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 0.1 -20; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -90 0.1 -20; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: -90 0.1 -30; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: -90 0.1 -30; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 0.1 -40; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -90 0.1 -40; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 2; center: -90 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 3; center: -90 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: -85 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -80 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <!--Генерация углового леса-->
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 1.1 50; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -90 1.1 50; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 1.1 40; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -90 1.1 40; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -65 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -65 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -60 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -60 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -55 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -55 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -50 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -50 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -39 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -39 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -45 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -45 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      
+      <a-entity tree-forest="model: #bereza; count: 10; center: -20 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 5; center: -25 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 10; center: -10 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 5; center: -15 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 10; center: -5 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 5; center: 0 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      
+      <a-entity tree-forest="model: #mountain; count: 5; center: 10 0.1 -89; minRadius: 5; maxRadius: 5; minScale: 3; maxScale:4; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #mountain; count: 5; center: 15 0.1 -89; minRadius: 5; maxRadius: 5; minScale: 3; maxScale:4; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #mountain; count: 8; center: -10 0.1 -89; minRadius: 5; maxRadius: 5; minScale: 3; maxScale:4; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      
+      <!--Генерация леса на карте-->
+      <a-entity tree-forest="model: #spruce; count: 5; center: 35 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 3"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: 35 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 3"></a-entity>
+      
+      <a-entity tree-forest="model: #spruce; count: 5; center: 55 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 3"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: 55 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 3"></a-entity>
+      
+      <a-entity tree-forest="model: #giant_tree; count: 3; center: 65 0.01 -20; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 3"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: 65 0.01 -15; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 3"></a-entity>
+      
+      <a-entity tree-forest="model: #giant_tree; count: 3; center: 45 0.01 0; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 3; center: 45 0.01 0; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <!--Генерация леса Нюша-->
+      <a-entity tree-forest="model: #spruce; count: 2; center: -48 0.1 5; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 1; center: -48 0.1 5; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <!--Генерация леса Бараш-->
+      <a-entity tree-forest="model: #giant_tree; count: 2; center: -30 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 2; center: -40 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 2; center: -35 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      
+      <a-entity tree-forest="model: #giant_tree; count: 2; center: -55 0.1 -50; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 2; center: -65 0.1 -50; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 2; center: -70 0.1 -50; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      
+      <a-entity tree-forest="model: #giant_tree; count: 2; center: -60 0.1 -24; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 3; center: -70 0.1 -28; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 2; center: -65 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <!--Генерация леса Совунья-->
+      <a-entity tree-forest="model: #spruce; count: 2; center: 65 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+    
+      <a-entity tree-forest="model: #spruce; count: 3; center: 65 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 4; center: 75 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 4; center: 85 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+       <a-entity tree-forest="model: #spruce; count: 3; center: 65 0.1 -65; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 4; center: 75 0.1 -65; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 4; center: 85 0.1 -65; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      
+    </a-scene>
+  </body>
+</html>
