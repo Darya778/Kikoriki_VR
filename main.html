@@ -2,22 +2,80 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>Смешарики VR — с прыжками и исправленным WASD + лес</title>
+    <title>Смешарики VR </title>
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script>
+      AFRAME.registerComponent('reset-on-collision', {
+        schema: {
+          with: { default: '.collision' },
+          colliderSize: { default: 0.3 },
+          pushBackDistance: { default: 0.03 }
+        },
+
+        init: function () {
+          this.collider = new THREE.Box3();
+          this.lastPosition = new THREE.Vector3().copy(this.el.object3D.position);
+          this.targets = [];
+
+          // Когда сцена загрузилась, собираем все коллайдеры
+          this.el.sceneEl.addEventListener('loaded', () => this.collectColliders());
+        },
+
+        collectColliders: function () {
+          const candidates = this.el.sceneEl.querySelectorAll(this.data.with);
+          this.targets = [];
+
+          candidates.forEach(el => {
+            const obj = el.object3D;
+            if (!obj) return;
+
+            // Если это модель — ждём её загрузки
+            if (el.hasAttribute('gltf-model')) {
+              el.addEventListener('model-loaded', () => {
+                const mesh = el.getObject3D('mesh');
+                if (mesh) this.targets.push(mesh);
+              });
+            } else {
+              this.targets.push(obj);
+            }
+          });
+        },
+
+        tick: function () {
+          const pos = this.el.object3D.position;
+          this.collider.setFromCenterAndSize(
+            pos,
+            new THREE.Vector3(this.data.colliderSize, 1.7, this.data.colliderSize)
+          );
+
+          for (let obj of this.targets) {
+            const box = new THREE.Box3().setFromObject(obj);
+            if (this.collider.intersectsBox(box)) {
+              pos.copy(this.lastPosition);
+              return;
+            }
+          }
+
+          this.lastPosition.copy(pos);
+        }
+      });
+    </script>
+    
   </head>
   <body>
-    <a-scene tabindex="0"> <!-- tabindex чтобы сцена могла получать фокус в некоторых браузерах -->
+    <!-- <div id="interaction-hud" style="display:none;position:fixed;left:50%;transform:translateX(-50%);bottom:18px;color:#fff;font-family:sans-serif;font-size:14px;text-shadow:0 2px 6px rgba(0,0,0,0.6);z-index:9999;padding:6px 12px;border-radius:6px;background:rgba(0,0,0,0.25)"></div> -->
+    <a-scene tabindex="0" interaction-ui> <!-- tabindex чтобы сцена могла получать фокус в некоторых браузерах -->
       <!-- Ассеты: все модели и текстуры предзагружаются -->
       <a-assets>
         <img id="skyTexture" src="assets/sky.jpg">
-        <img id="land" src="assets/land.jpg">
+        <img id="land" src="assets/map.png">
 
         <!-- Дома -->
         <a-asset-item id="pin_house" src="3dmodels/pin_house.glb"></a-asset-item>
         <a-asset-item id="krosh_house" src="3dmodels/krosh_house.glb"></a-asset-item>
         <a-asset-item id="kopatich_house" src="3dmodels/kopatich_house.glb"></a-asset-item>
         <a-asset-item id="ezhik_house" src="3dmodels/ezhik_house.glb"></a-asset-item>
-        <a-asset-item id="tree" src="glb/tree.fbx"></a-asset-item>
+      
         <a-asset-item id="nyusha_house" src="3dmodels/nyusha_house.glb"></a-asset-item>
         <a-asset-item id="karich_house" src="3dmodels/karich_house.glb"></a-asset-item>
         <a-asset-item id="sovynya_house" src="3dmodels/sovunya_house.glb"></a-asset-item>
@@ -48,95 +106,87 @@
         <a-asset-item id="nyusha"   src="3dmodels/nyusha.glb"></a-asset-item>
         <a-asset-item id="pin"      src="3dmodels/pin.glb"></a-asset-item>
         <a-asset-item id="sovunya"  src="3dmodels/sovunya.glb"></a-asset-item>
+        <a-asset-item id="grass"  src="glb/grass.glb"></a-asset-item>
+        <a-asset-item id="flower"  src="glb/margarita_flower.glb"></a-asset-item>
+        <a-asset-item id="arrow"  src="glb/simple_red_arrow.glb"></a-asset-item>
       </a-assets>
 
-      <!-- Небо и земля -->
+      <!-- Небо и земля 
+       look-controls="pointerLockEnabled: true"-->
       <a-sky src="#skyTexture"></a-sky>
       <a-plane rotation="-90 0 0" width="200" height="200" src="#land" shadow="receive: true"></a-plane>
 
-      <!-- Игрок / Rig: камера с WASD (wasd-controls на камере) -->
-      <a-entity id="rig" position="0 1.6 5"> 
-        <a-entity camera wasd-controls="acceleration: 50" look-controls></a-entity> 
+      <a-entity id="rig" position="-72 1.6 40" player-jump player-move reset-on-collision>
+        <a-entity camera look-controls="pointerLockEnabled: true" ></a-entity>
       </a-entity>
 
+      <a-entity id="paths" multiple-paths></a-entity>
+
+
       <!-- Дома -->
-      <a-entity gltf-model="#pin_house" position="70 5.81 40" scale="3.5 3.5 3.5" rotation="0 -60 0"></a-entity>
-      <a-entity gltf-model="#krosh_house" position="10 0.01 5" scale="1.5 1.5 1.5" rotation="0 -45 0"></a-entity>
-      <a-entity gltf-model="#kopatich_house" position="-25 0.01 75" scale="3.5 3.5 3.5"></a-entity>
-      <a-entity gltf-model="#ezhik_house" position="30 0.01 22" scale="3.5 3.5 3.5"></a-entity>
-      <a-entity gltf-model="#nyusha_house" position="-60 3.1 -8" scale="3.5 3.5 3.5" ></a-entity>
-      <a-entity gltf-model="#karich_house" position="-34 3.6 40" scale="3.5 3.5 3.5" ></a-entity>
-      <a-entity gltf-model="#sovynya_house" position="40 5.1 -60" scale="2 2 2"></a-entity>
-      <a-entity gltf-model="#losyash_house" position="-78 3.1 25" scale="3.5 3.5 3.5"></a-entity>
-      <a-entity gltf-model="#barash_house" position="-35 3.1 -50" scale="3.5 3.5 3.5"></a-entity>
+      <a-entity gltf-model="#pin_house" position="70 5.81 40" scale="3.5 3.5 3.5" rotation="0 -60 0" class="collision"></a-entity>
+      <a-entity gltf-model="#krosh_house" position="10 0.01 5" scale="1.5 1.5 1.5" rotation="0 -45 0" class="collision"></a-entity>
+      <a-entity gltf-model="#kopatich_house" position="-25 0.01 75" scale="3.5 3.5 3.5" class="collision"></a-entity>
+      <a-entity gltf-model="#ezhik_house" position="28 0.01 24" scale="3.5 3.5 3.5" rotation="0 -10 0" class="collision"></a-entity>
+      <a-entity gltf-model="#nyusha_house" position="-60 3.1 -8" scale="3.5 3.5 3.5" class="collision"></a-entity>
+      <a-entity gltf-model="#karich_house" position="-34 3.6 40" scale="3.5 3.5 3.5" class="collision"></a-entity>
+      <a-entity gltf-model="#sovynya_house" position="40 5.1 -60" scale="2 2 2"class="collision"></a-entity>
+      <a-entity gltf-model="#losyash_house" position="-78 3.1 25" scale="3.5 3.5 3.5"class="collision"></a-entity>
+      <a-entity gltf-model="#barash_house" position="-35 3.1 -50" scale="3.5 3.5 3.5"class="collision"></a-entity>
       <!--Камни бараша -->
-      <a-entity gltf-model="#rock" position="-32 0.9 -50" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-32 1.1 -49" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-32 0.5 -52" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-33 0.5 -53.5" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-34 0.8 -53.5" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-35 1.2 -53.5" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-36 1.3 -53.5" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-35 1.5 -53.8" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-36 1.8 -53.8" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-37 1.5 -53" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-38 1.6 -53" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-38 1.8 -53.8" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-38 1.4 -53" scale="3 3 3"></a-entity>
-      <a-entity gltf-model="#rock" position="-38 1.8 -53" scale="3 3 3"></a-entity>
+      <a-entity gltf-model="#rock" position="-32 0.9 -50" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-32 1.1 -49" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-32 0.5 -52" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-33 0.5 -53.5" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-34 0.8 -53.5" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-35 1.2 -53.5" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-36 1.3 -53.5" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-35 1.5 -53.8" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-36 1.8 -53.8" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-37 1.5 -53" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-38 1.6 -53" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-38 1.8 -53.8" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-38 1.4 -53" scale="3 3 3"class="collision"></a-entity>
+      <a-entity gltf-model="#rock" position="-38 1.8 -53" scale="3 3 3"class="collision"></a-entity>
 
       <!-- Одиночное дерево -->
-      <a-entity gltf-model="#giant_tree" position="-22 0.1 -43" ></a-entity>
-      <a-entity gltf-model="#pine" position="-47 -4 30"  scale="4 4 4"></a-entity>
+      <a-entity gltf-model="#giant_tree" position="-22 0.1 -43" class="collision"></a-entity>
+      <a-entity gltf-model="#pine" position="-47 -4 30"  scale="4 4 4"class="collision"></a-entity>
       <!--Горы-->
-      <a-entity gltf-model="#mountain" position="50 0.1 -80" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="50 0.1 -70" scale="3 3 3 "></a-entity>
-       <a-entity gltf-model="#mountain" position="50 0.1 -90" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="50 0.1 -95" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="52 0.1 -80" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="55 0.1 -70" scale="3 3 3 "></a-entity>
-       <a-entity gltf-model="#mountain" position="65 0.1 -90" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="68 0.1 -95" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="50 0.1 -80" scale="3 3 3 " class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="50 0.1 -70" scale="3 3 3 " class="collision"></a-entity>
+       <a-entity gltf-model="#mountain" position="50 0.1 -90" scale="3 3 3 " class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="50 0.1 -95" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="52 0.1 -80" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="55 0.1 -70" scale="3 3 3 "class="collision"></a-entity>
+       <a-entity gltf-model="#mountain" position="65 0.1 -90" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="68 0.1 -95" scale="3 3 3 "class="collision"></a-entity>
 
-      <a-entity gltf-model="#mountain" position="80 0.1 -80" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="85 0.1 -70" scale="3 3 3 "></a-entity>
-       <a-entity gltf-model="#mountain" position="83 0.1 -90" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="100 0.1 -95" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="74 0.1 -80" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="65 0.1 -70" scale="3 3 3 "></a-entity>
-       <a-entity gltf-model="#mountain" position="75 0.1 -90" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="88 0.1 -95" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="80 0.1 -80" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="85 0.1 -70" scale="3 3 3 "class="collision"></a-entity>
+       <a-entity gltf-model="#mountain" position="83 0.1 -90" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="100 0.1 -95" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="74 0.1 -80" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="65 0.1 -70" scale="3 3 3 "class="collision"></a-entity>
+       <a-entity gltf-model="#mountain" position="75 0.1 -90" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="88 0.1 -95" scale="3 3 3 "class="collision"></a-entity>
 
-      <a-entity gltf-model="#mountain" position="45 0.1 -85" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="40 0.1 -88" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="42 0.1 -90" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="38 0.1 -97" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="35 0.1 -89" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="35 0.1 -99" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#mountain" position="45 0.1 -93" scale="3 3 3 "></a-entity>
+      <a-entity gltf-model="#mountain" position="45 0.1 -85" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="40 0.1 -88" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="42 0.1 -90" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="38 0.1 -97" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="35 0.1 -89" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="35 0.1 -99" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#mountain" position="45 0.1 -93" scale="3 3 3 "class="collision"></a-entity>
 
-      <a-entity gltf-model="#spruce" position="28 0.1 -91" scale="3 3 3 "></a-entity>
-      <a-entity gltf-model="#desert" position="-80 0.1 -80" rotation=" 0 -180 0"></a-entity>
-      <a-entity gltf-model="#desert" position="-55 0.1 -80" rotation=" 0 -360 0"></a-entity>
-      <a-entity gltf-model="#bridge" position=" 18 0.1 -50" rotation=" 0 -90 0"></a-entity>
-      <a-entity gltf-model="#bridge" position=" 65 0.1 5" rotation=" 0 -105 0"></a-entity>
-      <a-entity gltf-model="#bridge" position=" 61 0.1 -40" scale= "0.8 0.8 0.8" rotation="0 55 0 "></a-entity>
-      <a-entity gltf-model="#fountain" position="-78 1.1 100" scale= "15 15 15" rotation="0 55 0 "></a-entity>
-      <a-entity gltf-model="#ice" position="70 -1.4 70" scale= "0.03 0.03 0.03"></a-entity>
-      <a-entity gltf-model="#ice" position="55 -1.4 85" scale= "0.03 0.03 0.03"></a-entity>
-      <a-entity gltf-model="#ice" position="40 -1.4 70" scale= "0.03 0.03 0.03"></a-entity>
-      <a-entity gltf-model="#ice" position="25 -1.4 85" scale= "0.03 0.03 0.03"></a-entity>
-      <a-entity gltf-model="#ice" position="40 -1.4 55" scale= "0.03 0.03 0.03"></a-entity>
-      <a-entity gltf-model="#ice" position="45 -1.4 40" scale= "0.03 0.03 0.03"></a-entity>
-      <!--<a-plane id="greenPlane"
-         width="200"
-         height="200"
-         color="#3F9B0B"
-         rotation="-90 0 0"
-         position="0 0 0"
-         material="side: double; metalness: 0.0; roughness: 1.0">
-      </a-plane>-->
-      <!-- Компонент прыжка и регистрация в A-Frame -->
+      <a-entity gltf-model="#spruce" position="28 0.1 -91" scale="3 3 3 "class="collision"></a-entity>
+      <a-entity gltf-model="#desert" position="-80 0.1 -80" rotation=" 0 -180 0"class="collision"></a-entity>
+      <a-entity gltf-model="#desert" position="-55 0.1 -80" rotation=" 0 -360 0"class="collision"></a-entity>
+      <a-entity gltf-model="#bridge" position=" 12 0.1 -49" rotation=" 0 -100 0"class="collision"></a-entity>
+      <a-entity gltf-model="#bridge" position=" 65 0.1 5" rotation=" 0 -105 0"class="collision"></a-entity>
+      <a-entity gltf-model="#bridge" position=" 59 0.1 -37" scale= "0.8 0.8 0.8" rotation="0 60 0 "class="collision"></a-entity>
+      <a-entity gltf-model="#fountain" position="-78 1.1 100" scale= "15 15 15" rotation="0 90 0 "class="collision"></a-entity>
+    
       <script>
         AFRAME.registerComponent('jumper', {
           schema: {
@@ -161,8 +211,7 @@
               const elapsed = now - this.jumpStart;
               const dur = this.data.duration;
               if (elapsed <= dur) {
-                const progress = elapsed / dur; // 0..1
-                // плавный подъём/опускание: sin(pi * progress)
+                const progress = elapsed / dur;
                 const y = this.originalY + Math.sin(Math.PI * progress) * this.data.height;
                 this.el.object3D.position.y = y;
               } else {
@@ -175,18 +224,118 @@
           }
         });
       </script>
+      <script>
+          AFRAME.registerComponent('log-bones', {
+            init: function () {
+              this.el.addEventListener('model-loaded', () => {
+                const modelName = this.el.getAttribute('gltf-model') || this.el.id || 'Unnamed model';
+                console.log(`Model: ${modelName}`);
 
+                const mesh = this.el.getObject3D('mesh');
+                if (!mesh) {
+                  console.warn('No mesh found for this model.');
+                  return;
+                }
+
+                mesh.traverse((node) => {
+                  if (node.isBone) {
+                    console.log('Bone found:', node.name);
+                  }
+                });
+              });
+            }
+          });
+          </script>
       <!-- Персонажи: используют preloaded ассеты и компонент jumper -->
-      <a-entity gltf-model="#barash"   position="-35 0.1 -45"    scale="4 4 4" jumper="height:0.22; duration:550; interval:2000"></a-entity>
-      <a-entity gltf-model="#ezhik"    position="30 0.1 27"    scale="4 4 4" rotation="0 -40 0" jumper="height:0.18; duration:500; interval:1800"></a-entity>
-      <a-entity gltf-model="#karich"   position="-34 0.21 45"    scale="4 4 4" rotation="0 0 0" jumper="height:0.2; duration:600; interval:2200"></a-entity>
-      <a-entity gltf-model="#kopatich" position="-25 0.1 80"     scale="4 4 4" rotation="0 0 0" jumper="height:0.15; duration:500; interval:1900"></a-entity>
-      <a-entity gltf-model="#krosh"    position="8 0.01 10" scale="4 4 4" rotation="0 -60 0" jumper="height:0.25; duration:480; interval:1700"></a-entity>
-      <a-entity gltf-model="#losyash"  position="-78 0.1 30" scale="4 4 4" rotation="0 0 0" jumper="height:0.18; duration:540; interval:2000"></a-entity>
-      <a-entity gltf-model="#nyusha"   position="-60 0.01 -3"     scale="4 4 4" rotation="0 0 0" jumper="height:0.2; duration:520; interval:2100"></a-entity>
-      <a-entity gltf-model="#pin"      position="62 0.1 38"    scale="4 4 4" rotation="0 120 0" jumper="height:0.22; duration:500; interval:2000"></a-entity>
-      <a-entity gltf-model="#sovunya"  position="42 1.3 -56"    scale="4 4 4" rotation="0 0 0" jumper="height:0.16; duration:560; interval:2300"></a-entity>
+      <!-- Barash -->
+      <a-entity gltf-model="#barash" position="-35 0.1 -45" scale="4 4 4"
+                jumper="height:0.22; duration:550; interval:2000" 
+                npc-interaction="name: Barash" class="collision" log-bones npc-animation>
+        <a-plane position="0 0.8 0" width="1.6" height="0.8" color="#000" opacity="0.25"></a-plane>
+        <a-entity id="dialogText" position="0 0.8 0.01"
+                  text="value: Press E(info) or Q(quest); align: center; anchor: center; baseline: center; width: 3; color: #fff;">
+        </a-entity>
+      </a-entity>
 
+      <!-- Ezhik -->
+      <a-entity gltf-model="#ezhik" position="25 0.1 27" scale="4 4 4" rotation="0 -40 0"
+                jumper="height:0.18; duration:500; interval:1800"
+                npc-interaction="name: Ezhik" class="collision" log-bones npc-animation>
+        <a-plane position="0 0.8 0" width="1.6" height="0.8" color="#000" opacity="0.25"></a-plane>
+        <a-entity id="dialogText" position="0 0.8 0.01"
+                  text="value: Press E(info) or Q(quest); align: center; anchor: center; baseline: center; width: 3; color: #fff;">
+        </a-entity>
+      </a-entity>
+
+      <!-- Karich -->
+      <a-entity gltf-model="#karich" position="-34 0.61 45" scale="4 4 4" rotation="0 0 0"
+                jumper="height:0.2; duration:600; interval:2200"
+                npc-interaction="name: Karich" class="collision" log-bones npc-animation>
+        <a-plane position="0 0.8 0" width="1.6" height="0.8" color="#000" opacity="0.25"></a-plane>
+        <a-entity id="dialogText" position="0 0.8 0.01"
+                  text="value: Press E(info) or Q(quest); align: center; anchor: center; baseline: center; width: 3; color: #fff;">
+        </a-entity>
+      </a-entity>
+
+      <!-- Kopatich -->
+      <a-entity gltf-model="#kopatich" position="-25 0.1 80" scale="4 4 4" rotation="0 0 0"
+                jumper="height:0.15; duration:500; interval:1900"
+                npc-interaction="name: Kopatich" class="collision" log-bones npc-animation>
+        <a-plane position="0 0.8 0" width="1.6" height="0.8" color="#000" opacity="0.25"></a-plane>
+        <a-entity id="dialogText" position="0 0.8 0.01"
+                  text="value: Press E(info) or Q(quest); align: center; anchor: center; baseline: center; width: 3; color: #fff;">
+        </a-entity>
+      </a-entity>
+
+      <!-- Krosh -->
+      <a-entity gltf-model="#krosh" position="8 0.01 10" scale="4 4 4" rotation="0 -60 0"
+                jumper="height:0.25; duration:480; interval:1700"
+                npc-interaction="name: Krosh" class="collision" log-bones npc-animation>
+        <a-plane position="0 0.8 0" width="1.6" height="0.8" color="#000" opacity="0.25"></a-plane>
+        <a-entity id="dialogText" position="0 0.8 0.01"
+                  text="value: Press E(info) or Q(quest); align: center; anchor: center; baseline: center; width: 3; color: #fff;">
+        </a-entity>
+      </a-entity>
+
+      <!-- Losyash -->
+      <a-entity gltf-model="#losyash" position="-78 0.1 30" scale="4 4 4" rotation="0 0 0"
+                jumper="height:0.18; duration:540; interval:2000"
+                npc-interaction="name: Losyash" class="collision" log-bones npc-animation>
+        <a-plane position="0 0.8 0" width="1.6" height="0.8" color="#000" opacity="0.25"></a-plane>
+        <a-entity id="dialogText" position="0 0.8 0.01"
+                  text="value: Press E(info) or Q(quest); align: center; anchor: center; baseline: center; width: 3; color: #fff;">
+        </a-entity>
+      </a-entity>
+
+      <!-- Nyusha -->
+      <a-entity gltf-model="#nyusha" position="-60 0.01 -3" scale="4 4 4" rotation="0 0 0"
+                jumper="height:0.2; duration:520; interval:2100"
+                npc-interaction="name: Nyusha" class="collision" log-bones npc-animation>
+        <a-plane position="0 0.8 0" width="1.6" height="0.8" color="#000" opacity="0.25"></a-plane>
+        <a-entity id="dialogText" position="0 0.8 0.01"
+                  text="value: Press E(info) or Q(quest); align: center; anchor: center; baseline: center; width: 3; color: #fff;">
+        </a-entity>
+      </a-entity>
+
+      <!-- Pin -->
+      <a-entity gltf-model="#pin" position="62 0.1 38" scale="4 4 4" rotation="0 120 0"
+                jumper="height:0.22; duration:500; interval:2000"
+                npc-interaction="name: Pin" class="collision" log-bones npc-animation>
+        <a-plane position="0 0.8 0" width="1.6" height="0.8" color="#000" opacity="0.25"></a-plane>
+        <a-entity id="dialogText" position="0 0.8 0.01"
+                  text="value: Press E(info) or Q(quest); align: center; anchor: center; baseline: center; width: 3; color: #fff;">
+        </a-entity>
+      </a-entity>
+
+      <!-- Sovunya -->
+      <a-entity gltf-model="#sovunya" position="42 1.3 -56" scale="4 4 4" rotation="0 0 0"
+                jumper="height:0.16; duration:560; interval:2300"
+                npc-interaction="name: Sovunya" class="collision" log-bones npc-animation>
+       <a-plane position="0 0.8 0" width="1.6" height="0.8" color="#000" opacity="0.25"></a-plane>
+        <a-entity id="dialogText" position="0 0.8 0.01"
+                  text="value: Press E(info) or Q(quest); align: center; anchor: center; baseline: center; width: 3; color: #fff;">
+        </a-entity>
+      </a-entity>
       <!-- TREE FOREST COMPONENT (adds 13 trees around center 10,0.01,5) -->
       <script>
         AFRAME.registerComponent('tree-forest', {
@@ -222,6 +371,7 @@
                 const y = cfg.center.y - Math.random() * cfg.maxBury; // уводим y вниз до -maxBury
                 pos = { x, y, z };
                 attempts++;
+                console.log("Grass at:", pos);
               } while (attempts < 12 && placed.some(p => dist(p, pos) < cfg.avoidRadius));
 
               placed.push(pos);
@@ -238,123 +388,490 @@
           }
         });
       </script>
+      <script>
+        AFRAME.registerComponent('player-jump', {
+          schema: {
+            jumpStrength: { type: 'number', default: 4 },    // начальная скорость прыжка (м/с)
+            gravity:      { type: 'number', default: -9.8 }, // м/с^2 (отрицательная)
+            groundY:      { type: 'number', default: 1.6 },  // высота ног игрока над землёй (Y)
+            walkAccel:    { type: 'number', default: 10 }    // значение wasd-controls acceleration
+          },
+          init: function () {
+            this.velocityY = 0;      // текущее вертикальное ускорение (м/с)
+            this.isJumping = false;
+            this._onKeyDown = this._onKeyDown.bind(this);
+
+            // слушаем пробел
+            window.addEventListener('keydown', this._onKeyDown);
+          },
+          remove: function () {
+            window.removeEventListener('keydown', this._onKeyDown);
+          },
+          _onKeyDown: function (e) {
+            // не реагируем, если фокус в input/textarea
+            const tag = document.activeElement && document.activeElement.tagName;
+            if (tag === 'INPUT' || tag === 'TEXTAREA' || document.activeElement.isContentEditable) return;
+
+            if (e.code === 'Space') {
+              // предотвращаем скролл страницы
+              e.preventDefault();
+              if (!this.isJumping) {
+                this.velocityY = this.data.jumpStrength;
+                this.isJumping = true;
+              }
+            }
+          },
+          tick: function (time, dt) {
+            // dt — миллисекунды с прошлой итерации
+            const delta = (dt || 16) / 1000; // в секундах (защита если dt==0)
+            if (!this.isJumping && Math.abs(this.velocityY) < 1e-4) return;
+
+            const pos = this.el.object3D.position;
+
+            // интегрируем скорость и позицию (simple Euler)
+            this.velocityY += this.data.gravity * delta;
+            pos.y += this.velocityY * delta;
+
+            // проверка столкновения с землёй
+            if (pos.y <= this.data.groundY) {
+              pos.y = this.data.groundY;
+              this.velocityY = 0;
+              this.isJumping = false;
+            }
+
+            // обновляем позицию объекта
+            this.el.object3D.position.copy(pos);
+          }
+        });
+
+
+        AFRAME.registerComponent('player-move', {
+          schema: { speed: { type: 'number', default: 10 } },              // СКОРОСТЬ
+          init: function () {
+            this.cameraEl = this.el.querySelector('[camera]');
+            this.keys = {};
+            window.addEventListener('keydown', e => this.keys[e.code] = true);
+            window.addEventListener('keyup', e => this.keys[e.code] = false);
+            this.tempVec = new THREE.Vector3();
+          },
+          tick: function (time, delta) {
+            const dt = delta / 1000;
+            const rig = this.el.object3D;
+            const cam = this.cameraEl.object3D;
+
+            if (!cam) return;
+
+            let move = new THREE.Vector3();
+
+            if (this.keys['KeyW']) move.z -= 1;
+            if (this.keys['KeyS']) move.z += 1;
+            if (this.keys['KeyA']) move.x -= 1;
+            if (this.keys['KeyD']) move.x += 1;
+
+            if (move.lengthSq() === 0) return;
+
+            move.normalize();
+
+            cam.getWorldDirection(this.tempVec);
+            this.tempVec.y = 0; 
+            this.tempVec.normalize();
+
+            const right = new THREE.Vector3().crossVectors(new THREE.Vector3(0, 1, 0), this.tempVec).normalize();
+
+            const dir = new THREE.Vector3();
+            dir.addScaledVector(this.tempVec, move.z); 
+            dir.addScaledVector(right, move.x);  
+            dir.normalize();
+
+            rig.position.addScaledVector(dir, this.data.speed * dt);
+          }
+        });
+
+
+      </script>
+      <script>
+        AFRAME.registerComponent('sovunya-video-trigger', {
+          init: function () {
+            // создаём видео-элемент, но пока скрываем
+            const video = document.createElement('video');
+            video.id = 'fullScreenVideo';
+            video.src = 'video/ENd.mp4'; // путь к видео
+            video.style.position = 'fixed';
+            video.style.top = '0';
+            video.style.left = '0';
+            video.style.width = '100vw';
+            video.style.height = '100vh';
+            video.style.zIndex = '9999';
+            video.style.display = 'none';
+            video.autoplay = false;
+            video.loop = false;
+            video.muted = false; // если нужно звук
+            document.body.appendChild(video);
+
+            this.video = video;
+          },
+
+          tick: function () {
+            // проверяем флаг
+            if (window.sovunyaTalked && this.video.style.display === 'none') {
+              this.video.style.display = 'block';
+              this.video.play();
+            }
+          }
+        });
+
+        // подключаем компонент к сцене
+        document.querySelector('a-scene').setAttribute('sovunya-video-trigger', '');
+      </script>
+      <script>
+      AFRAME.registerComponent('npc-animation', {
+        schema: {
+          active: { type: 'boolean', default: false },
+          boneName: { type: 'string', default: 'armr' }, // правая рука
+          speed: { type: 'number', default: 8 },         // скорость махания
+          angle: { type: 'number', default: 1.5 }        // амплитуда махания (радианы)
+        },
+
+        init: function () {
+          this.bone = null;
+          this.startRotation = null;
+          this.time = 0;
+          
+          this.el.addEventListener('model-loaded', () => {
+            const mesh = this.el.getObject3D('mesh');
+            if (!mesh) return;
+
+            // ищем кость по имени
+            mesh.traverse((node) => {
+              if (node.isBone && node.name.toLowerCase() === this.data.boneName.toLowerCase()) {
+                this.bone = node;
+                this.startRotation = node.rotation.z;
+              }
+            });
+
+            if (!this.bone) console.warn('Bone not found:', this.data.boneName);
+          });
+        },
+
+        tick: function (time, delta) {
+          if (!this.data.active || !this.bone) return;
+
+          // простая синусоидальная анимация
+          this.time += delta / 1000;
+          this.bone.rotation.z = this.startRotation - Math.sin(this.time * this.data.speed) * this.data.angle;
+        }
+      });
+      </script>
+      <script>
+      AFRAME.registerComponent('npc-interaction', {
+        schema: { name: { type: 'string', default: '' } },
+        init: function () {
+          const el = this.el;
+          const rig = document.querySelector('#rig');
+          const dialogText = el.querySelector('#dialogText');
+          const npcName = this.data.name;
+
+          let npcData = null;
+          let infoStep = 0;
+          let questStep = 0;
+
+          // Глобальные флаги
+          if (!window.nyushaTalked) window.nyushaTalked = false;
+          if (!window.sovunyaTalked) window.sovunyaTalked = false;
+
+          fetch('npc_data.json')
+            .then(res => res.json())
+            .then(data => {
+              npcData = data.npcs[npcName];
+              if (!npcData) console.warn(`NPC with name "${npcName}" not found`);
+            })
+            .catch(err => console.error("Failed to load JSON:", err));
+
+          function setDialog(text) {
+            dialogText.setAttribute('text', {
+              value: text,
+              align: 'center',
+              anchor: 'center',
+              baseline: 'center',
+              width: 0.8,
+              wrapCount: 15, 
+              color: '#fff'
+            });
+          }
+
+          window.addEventListener('keydown', (e) => {
+            const key = e.code;
+            if (key !== 'KeyE' && key !== 'KeyQ') return;
+
+            const npcPos = el.object3D.getWorldPosition(new THREE.Vector3());
+            const rigPos = rig.object3D.getWorldPosition(new THREE.Vector3());
+            const dist = npcPos.distanceTo(rigPos);
+
+            if (dist > 10) { setDialog('Press E(info) or Q(quest)'); return; }
+            if (!npcData) { setDialog('NPC data not loaded.'); return; }
+
+            if (key === 'KeyE') {
+              if (npcData.info && npcData.info.length > 0) {
+                setDialog(npcData.info[infoStep]);
+                infoStep = (infoStep + 1) % npcData.info.length;
+              } else {
+                setDialog(npcData.description || 'No info available.');
+              }
+            } else if (key === 'KeyQ') {
+              if (npcData.questText && npcData.questText.length > 0) {
+                setDialog(npcData.questText[questStep]);
+
+                // Если это Совунья и последняя реплика, ставим глобальный флаг
+                if (npcName.toLowerCase() === 'sovunya' && questStep === npcData.questText.length - 1) {
+                  window.sovunyaTalked = true;
+                }
+                if (questStep === npcData.questText.length - 1) {
+                  el.setAttribute('npc-animation', 'active: true');
+                }
+
+                questStep = (questStep + 1) % npcData.questText.length;
+              } else {
+                setDialog('No quest available.');
+              }
+            }
+
+            // если это Нюша, ставим флаг
+            if (npcName.toLowerCase() === 'nyusha') {
+              window.nyushaTalked = true;
+            }
+          });
+        }
+      });
+      </script>
+      
+      <script>
+      AFRAME.registerComponent('switch-sky-after-nyusha', {
+        init: function () {
+          this.skyEl = document.querySelector('#skyTexture');
+          this.changed = false;
+        },
+        tick: function () {
+          if (window.nyushaTalked && !this.changed && this.skyEl) {
+            
+            this.skyEl.setAttribute('src', 'assets/true_night.jpg');
+            this.changed = true;
+          }
+        }
+      });
+
+      document.querySelector('a-scene').setAttribute('switch-sky-after-nyusha', '');
+      </script>
+
+      <script>
+      AFRAME.registerComponent('multiple-paths', {
+        init: function () {
+          const scene = this.el.sceneEl;
+          const step = 5;
+          const houses = {
+            losyash:  {x: -78, y: 1, z: 30},
+            karich:   {x: -34, y: 1, z: 45},
+            kopatich2:{x: -70, y: 1, z: 50},
+            kopatich: {x: -25, y: 1, z: 80},
+            ezhik:    {x: 25,  y: 1, z: 27},
+            krosh:    {x: 8,  y: 1, z: 10},
+            sovunya:  {x: 42,  y: 1, z: -56},
+            barash:   {x: -35, y: 1, z: -45},
+            nyusha:   {x: -60, y: 1, z: -3}
+          };
+
+          // маршруты стрелок, последняя скрыта по умолчанию
+          this.routes = [
+            ['losyash', 'kopatich2'],
+            ['kopatich2', 'kopatich'],
+            ['kopatich', 'ezhik'],
+            ['ezhik', 'krosh'],
+            ['krosh', 'barash'],
+            ['barash', 'nyusha'],
+            ['nyusha', 'sovunya'] // последняя покажется после разговора с Нюшей
+          ];
+
+          this.arrows = [];
+          this.hiddenRoute = this.routes.pop(); // временно убираем последнюю
+
+          this.routes.forEach(([from, to]) => { this.createArrows(houses[from], houses[to], scene, step); });
+
+          this.playerRig = document.querySelector('#rig').object3D;
+        },
+
+        createArrows: function(start, end, scene, step) {
+          const dx = end.x - start.x;
+          const dz = end.z - start.z;
+          const distance = Math.sqrt(dx*dx + dz*dz);
+          const steps = Math.floor(distance / step);
+          for (let i = 0; i <= steps; i++) {
+            const t = i / steps;
+            const x = start.x + dx * t;
+            const z = start.z + dz * t;
+            const angle = Math.atan2(dx, dz) * 180 / Math.PI;
+
+            const arrow = document.createElement('a-entity');
+            arrow.setAttribute('gltf-model', '#arrow');
+            arrow.setAttribute('position', `${x} 0 ${z}`);
+            arrow.setAttribute('rotation', `-90 ${angle} 0`);
+            arrow.setAttribute('scale', '0.8 0.8 0.8');
+            arrow.setAttribute('visible', 'false');
+            scene.appendChild(arrow);
+            this.arrows.push(arrow);
+          }
+        },
+
+        tick: function () {
+          const camPos = new THREE.Vector3();
+          this.playerRig.getWorldPosition(camPos);
+
+          // показываем основную часть стрелок
+          this.arrows.forEach((arrow) => {
+            const distance = camPos.distanceTo(arrow.object3D.position);
+            arrow.setAttribute('visible', distance < 10);
+          });
+
+          // проверяем, поговорил ли с Нюшей, и показываем скрытую дорогу
+          if (window.nyushaTalked && this.hiddenRoute) {
+            const scene = this.el.sceneEl;
+            const houses = {
+              losyash:  {x: -78, y: 1, z: 30},
+              karich:   {x: -34, y: 1, z: 45},
+              kopatich2:{x: -70, y: 1, z: 50},
+              kopatich: {x: -25, y: 1, z: 80},
+              ezhik:    {x: 25,  y: 1, z: 27},
+              krosh:    {x: 8,  y: 1, z: 10},
+              sovunya:  {x: 42,  y: 1, z: -56},
+              barash:   {x: -35, y: 1, z: -45},
+              nyusha:   {x: -60, y: 1, z: -3}
+            };
+            
+            this.createArrows(houses[this.hiddenRoute[0]], houses[this.hiddenRoute[1]], scene, 5);
+            this.hiddenRoute = null; // больше не нужно создавать повторно
+          }
+        }
+      });
+
+      // включаем компонент на объекте paths
+      document.querySelector('#paths').setAttribute('multiple-paths', '');
+      </script>
+       
 
       <!--Генерация Леса Крош-->
-      <a-entity tree-forest="model: #giant_tree; count: 20; center: -10 0.01 5; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.6;avoid_radius: 3"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 20; center: -10 0.01 5; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.6;avoid-radius: 3"></a-entity>
 
-      <a-entity tree-forest="model: #spruce; count: 10; center: 15 0.01 -18; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.6;avoid_radius: 3"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: 15 0.01 -18; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.6;avoid_radius: 3"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: 15 0.01 -18; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.6;avoid-radius: 3"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: 15 0.01 -18; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.6;avoid-radius: 3"></a-entity>
       
       <!--Генерация Леса Карыч-->
 
-      <a-entity tree-forest="model: #giant_tree; count: 20; center: -15 0.1 40; minRadius: 5; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.6;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 20; center: -15 0.1 40; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.6;avoid-radius: 5"></a-entity>
 
-      <a-entity tree-forest="model: #spruce; count: 10; center: -53 0.1 40; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.6;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -53 0.01 40; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.6;avoid_radius: 5"></a-entity>
-      
-      <!--Генерация Леса Лосяш-->
+      <a-entity tree-forest="model: #spruce; count: 10; center: -53 0.1 40; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.6;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -53 0.01 40; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.6;avoid-radius: 5"></a-entity>
 
-      <a-entity tree-forest="model: #giant_tree; count: 2; center: -65 0.1 30; minRadius: 4; maxRadius: 4; minScale: 0,5; maxScale:0.9; maxBury: 0.6;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 3; center: -65 0.1 30; minRadius: 4; maxRadius: 4; minScale: 2.5; maxScale: 3.2; maxBury: 0.6;avoid_radius: 5"></a-entity>
-      
-      <a-entity tree-forest="model: #giant_tree; count: 3; center: -85 0.1 30; minRadius: 4; maxRadius: 4; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 2; center: -85 0.1 30; minRadius: 4; maxRadius: 4; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+     <!--Генерация для конца карты со стороны дома лосяша-->
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -85 0.1 10; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -85 0.1 10; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -75 0.1 10; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -75 0.1 10; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -85 0.1 0; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -85 0.1 0; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: -90 0.1 -10; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: -90 0.1 -10; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
 
-      <a-entity tree-forest="model: #giant_tree; count: 5; center: -85 0.1 15; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 5; center: -85 0.1 15; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 5; center: -65 0.1 15; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 5; center: -65 0.1 15; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 5; center: -75 0.1 15; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 5; center: -75 0.1 15; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-
-      <!--Генерация для конца карты со стороны дома лосяша-->
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -85 0.1 10; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -85 0.1 10; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -75 0.1 10; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -75 0.1 10; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -85 0.1 0; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -85 0.1 0; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 5; center: -90 0.1 -10; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 5; center: -90 0.1 -10; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 0.1 -20; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -90 0.1 -20; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 5; center: -90 0.1 -30; minRadius: 5; maxRadius: 5; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 5; center: -90 0.1 -30; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 0.1 -40; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -90 0.1 -40; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 2; center: -90 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 3; center: -90 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 5; center: -85 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -80 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 0.1 -20; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -90 0.1 -20; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: -90 0.1 -30; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: -90 0.1 -30; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 0.1 -40; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -90 0.1 -40; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 2; center: -90 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 3; center: -90 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: -85 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -80 0.1 -50; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
       <!--Генерация углового леса-->
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 1.1 50; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -90 1.1 50; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 1.1 40; minRadius: 10; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -90 1.1 40; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 0.1 50; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -90 0.1 50; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -90 0.1 40; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -90 0.1 40; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
       
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -65 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -65 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -60 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -60 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -65 0.1 90; minRadius: 8; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -65 0.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -60 0.1 90; minRadius: 8; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -60 0.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
       
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -55 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -55 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -50 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -50 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -55 0.1 90; minRadius: 8; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -55 0.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -50 0.1 90; minRadius: 8; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -50 0.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
       
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -39 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -39 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 10; center: -45 1.1 90; minRadius: 8; maxRadius: 10; minScale: 0,5; maxScale:0.9; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 10; center: -45 1.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -39 0.1 90; minRadius: 8; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -39 0.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 10; center: -45 0.1 90; minRadius: 8; maxRadius: 10; minScale: 0.5; maxScale:0.9; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 10; center: -45 0.1 90; minRadius: 8; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.1;avoid-radius: 5"></a-entity>
       
-      <a-entity tree-forest="model: #bereza; count: 10; center: -20 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #bereza; count: 5; center: -25 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #bereza; count: 10; center: -10 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #bereza; count: 5; center: -15 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #bereza; count: 10; center: -5 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #bereza; count: 5; center: 0 1.1 90; minRadius: 5; maxRadius: 5; minScale: 0,9; maxScale:1; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 10; center: -20 0.1 90; minRadius: 5; maxRadius: 5; minScale: 0.9; maxScale:1; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 5; center: -25 0.1 90; minRadius: 5; maxRadius: 5; minScale: 0.9; maxScale:1; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 10; center: -10 0.1 90; minRadius: 5; maxRadius: 5; minScale: 0.9; maxScale:1; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 5; center: -15 0.1 90; minRadius: 5; maxRadius: 5; minScale: 0.9; maxScale:1; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 10; center: -5 0.1 90; minRadius: 5; maxRadius: 5; minScale: 0.9; maxScale:1; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 5; center: 0 0.1 90; minRadius: 5; maxRadius: 5; minScale: 0.9; maxScale:1; maxBury: 0.1;avoid-radius: 5"></a-entity>
       
-      <a-entity tree-forest="model: #mountain; count: 5; center: 10 0.1 -89; minRadius: 5; maxRadius: 5; minScale: 3; maxScale:4; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #mountain; count: 5; center: 15 0.1 -89; minRadius: 5; maxRadius: 5; minScale: 3; maxScale:4; maxBury: 0.1;avoid_radius: 5"></a-entity>
-      <a-entity tree-forest="model: #mountain; count: 8; center: -10 0.1 -89; minRadius: 5; maxRadius: 5; minScale: 3; maxScale:4; maxBury: 0.1;avoid_radius: 5"></a-entity>
+      <a-entity tree-forest="model: #mountain; count: 5; center: 10 0.1 -89; minRadius: 5; maxRadius: 5; minScale: 3; maxScale:4; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #mountain; count: 5; center: 15 0.1 -89; minRadius: 5; maxRadius: 5; minScale: 3; maxScale:4; maxBury: 0.1;avoid-radius: 5"></a-entity>
+      <a-entity tree-forest="model: #mountain; count: 8; center: -10 0.1 -89; minRadius: 5; maxRadius: 5; minScale: 3; maxScale:4; maxBury: 0.1;avoid-radius: 5"></a-entity>
       
       <!--Генерация леса на карте-->
-      <a-entity tree-forest="model: #spruce; count: 5; center: 35 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 3"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 5; center: 35 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 3"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: 35 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 3"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: 35 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid-radius: 3"></a-entity>
       
-      <a-entity tree-forest="model: #spruce; count: 5; center: 55 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 3"></a-entity>
-      <a-entity tree-forest="model: #giant_tree; count: 5; center: 55 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 3"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: 55 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 3"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 5; center: 55 0.01 -25; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid-radius: 3"></a-entity>
       
-      <a-entity tree-forest="model: #giant_tree; count: 3; center: 65 0.01 -20; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 3"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 5; center: 65 0.01 -15; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 3"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 3; center: 65 0.01 -20; minRadius: 5; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid-radius: 3"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 5; center: 65 0.01 -15; minRadius: 5; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 3"></a-entity>
       
-      <a-entity tree-forest="model: #giant_tree; count: 3; center: 45 0.01 0; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 3; center: 45 0.01 0; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 3; center: 45 0.01 0; minRadius: 10; maxRadius: 10; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 3; center: 45 0.01 0; minRadius: 10; maxRadius: 10; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
       <!--Генерация леса Нюша-->
-      <a-entity tree-forest="model: #spruce; count: 2; center: -48 0.1 5; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #bereza; count: 1; center: -48 0.1 5; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 2; center: -48 0.1 5; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 1; center: -48 0.1 5; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid-radius: 7"></a-entity>
       <!--Генерация леса Бараш-->
-      <a-entity tree-forest="model: #giant_tree; count: 2; center: -30 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 2; center: -40 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #bereza; count: 2; center: -35 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 2; center: -30 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 2; center: -40 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 2; center: -35 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid-radius: 7"></a-entity>
       
-      <a-entity tree-forest="model: #giant_tree; count: 2; center: -55 0.1 -50; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 2; center: -65 0.1 -50; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #bereza; count: 2; center: -70 0.1 -50; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 2; center: -55 0.1 -50; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 2; center: -65 0.1 -50; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 2; center: -70 0.1 -50; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid-radius: 7"></a-entity>
       
-      <a-entity tree-forest="model: #giant_tree; count: 2; center: -60 0.1 -24; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 3; center: -70 0.1 -28; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #bereza; count: 2; center: -65 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #giant_tree; count: 2; center: -60 0.1 -24; minRadius: 5; maxRadius: 5; minScale: 0.5; maxScale: 0.9; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 3; center: -70 0.1 -28; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #bereza; count: 2; center: -65 0.1 -25; minRadius: 5; maxRadius: 5; minScale: 0.6; maxScale: 1; maxBury: 0.2;avoid-radius: 7"></a-entity>
       <!--Генерация леса Совунья-->
-      <a-entity tree-forest="model: #spruce; count: 2; center: 65 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 2; center: 65 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
     
-      <a-entity tree-forest="model: #spruce; count: 3; center: 65 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 4; center: 75 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 4; center: 85 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
-       <a-entity tree-forest="model: #spruce; count: 3; center: 65 0.1 -65; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 4; center: 75 0.1 -65; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
-      <a-entity tree-forest="model: #spruce; count: 4; center: 85 0.1 -65; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid_radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 3; center: 65 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 4; center: 75 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 4; center: 85 0.1 -55; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 3; center: 65 0.1 -65; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 4; center: 75 0.1 -65; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #spruce; count: 4; center: 85 0.1 -65; minRadius: 5; maxRadius: 5; minScale: 2.5; maxScale: 3.2; maxBury: 0.2;avoid-radius: 7"></a-entity>
+      <!--Генерация травы-->
+      <a-entity tree-forest="model: #grass; count: 100; center:-78 -1.1 30; minRadius: 1; maxRadius: 30; minScale: 0.001; maxScale: 0.002; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #grass; count: 100; center: 30 -1.1 -78; minRadius: 1; maxRadius: 30; minScale: 0.001; maxScale: 0.002; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #grass; count: 100; center: -78 -1.1 -78; minRadius: 1; maxRadius: 30; minScale: 0.001; maxScale: 0.002; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #grass; count: 100; center: 30 -1.1 30; minRadius: 1; maxRadius: 30; minScale: 0.001; maxScale: 0.002; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #grass; count: 100; center: -20 -1.1 -78; minRadius: 1; maxRadius: 30; minScale: 0.001; maxScale: 0.002; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #grass; count: 100; center: 0 -1.1 0; minRadius: 1; maxRadius: 30; minScale: 0.001; maxScale: 0.002; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      
+      <!--Генерация цветов-->>
+      <a-entity tree-forest="model: #flower; count: 60; center:-78 -0.3 30; minRadius: 1; maxRadius: 30; minScale: 0.2; maxScale: 0.4; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #flower; count: 60; center: 30 -0.3 -78; minRadius: 1; maxRadius: 30;minScale: 0.2; maxScale: 0.4; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #flower; count: 60; center: -78 -0.3 -78; minRadius: 1; maxRadius: 30; minScale: 0.2; maxScale: 0.4; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #flower; count: 60; center: 30 -0.3 30; minRadius: 1; maxRadius: 30;minScale: 0.2; maxScale: 0.4; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #flower; count: 60; center: -20 -0.3 -78; minRadius: 1; maxRadius: 30;minScale: 0.2; maxScale: 0.4; maxBury: 0.0; avoid-radius: 7"></a-entity>
+      <a-entity tree-forest="model: #flower; count: 60; center: 0 -0.3 0; minRadius: 1; maxRadius: 30; minScale: 0.2; maxScale: 0.4;maxBury: 0.0; avoid-radius: 7"></a-entity>
       
     </a-scene>
   </body>
